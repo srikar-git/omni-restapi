@@ -1,0 +1,120 @@
+CREATE TABLE `tbl_users_t` (
+  `user_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_name` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `user_email` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `user_password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`user_id`)
+) AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `tbl_users` (
+  `user_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_name` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `user_email` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `user_password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`user_id`)
+) AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `tbl_inv` (
+  `prod_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `prod_name` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `store_count` bigint(20) NOT NULL DEFAULT 0,
+  `price` bigint(20) NOT NULL DEFAULT 0,
+  `create_time` DATE DEFAULT NULL,
+  `last_order` bigint(20) DEFAULT 0,
+  `last_topup` bigint(20) DEFAULT 0,
+  PRIMARY KEY (`prod_id`)
+) AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `tbl_orders` (
+  `order_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `order_date` DATE DEFAULT NULL,
+  `total_count` bigint(20) DEFAULT 0,
+  `order_value` bigint(20) DEFAULT 0,
+  PRIMARY KEY (order_id)
+) AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `tbl_ord_details` (
+  `order_id` bigint(20) NOT NULL,
+  `prod_id` bigint(20) NOT NULL,
+  `quant` bigint(20) DEFAULT 0,
+  `sold_price` bigint(20) DEFAULT 0,
+  PRIMARY KEY (order_id,prod_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `tbl_topups` (
+  `topup_id` bigint(20) NOT NULL,
+  `prod_id` bigint(20) NOT NULL,
+  `topup_date` DATE DEFAULT NULL,
+  `count` bigint(20) DEFAULT 0,
+  PRIMARY KEY (topup_id,prod_id)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+SELECT tbl_orders.order_id, tbl_orders.user_id, tbl_orders.order_date, tbl_orders.total_count, tbl_orders.order_value, COUNT(tbl_ord_details.prod_id) FROM tbl_orders, tbl_ord_details WHERE tbl_orders.order_id  = tbl_ord_details.order_id;
+
+
+SELECT temp.order_id,user_id,order_date,total_count,order_value,temp.products FROM tbl_orders, (SELECT a.order_id, CONCAT('[',GROUP_CONCAT(CONCAT('{','id: ',a.prod_id,', name: ',b.prod_name,', quantity: ',a.quant,', price: ',a.sold_price,'}')),']') as products  FROM tbl_ord_details AS a INNER JOIN tbl_inv AS b ON a.prod_id = b.prod_id  GROUP BY a.order_id) AS temp WHERE tbl_orders.order_id = temp.order_id;
+
+SELECT temp.order_id,user_id,order_date,total_count,order_value,temp.products FROM tbl_orders, (SELECT a.order_id, CONCAT('[',GROUP_CONCAT(CONCAT('{','id: ',a.prod_id,', name: ',b.prod_name,', quantity: ',a.quant,', price: ',a.sold_price,'}')),']') as products  FROM tbl_ord_details AS a INNER JOIN tbl_inv AS b ON a.prod_id = b.prod_id  GROUP BY a.order_id) AS temp WHERE user_id = %s AND  tbl_orders.order_id = temp.order_id;
+
+SELECT temp.order_id,user_id,order_date,total_count,order_value,temp.products FROM tbl_orders, (SELECT a.order_id, CONCAT('[',GROUP_CONCAT(CONCAT('{','"id": ',a.prod_id,', "name": ',b.prod_name,', "quantity": ',a.quant,', "price": ',a.sold_price,'}')),']') as products  FROM tbl_ord_details AS a INNER JOIN tbl_inv AS b ON a.prod_id = b.prod_id  GROUP BY a.order_id) AS temp WHERE tbl_orders.order_id = temp.order_id;
+
+
+tables: tbl_users, tbl_inv, tbl_ord, tbl_topups
+
+tbl_orders - order_id, user_id, order_date, total_count, order_value
+
+tbl_ord_details - order_id, prod_id, quant, sold_price
+
+tbl_inv - prod_id, prod_name, store_count, create_time, last_order, last_topup
+
+tbl_topups - topup_id, prod_id, topup_date, count
+
+tbl_users - user_id, user_name, user_email, user_password
+
+
+SELECT a.user_id, a.order_id, GROUP_CONCAT(a.prod_id, b.prod_name, a.count) as products  FROM tbl_orders as a inner join tbl_inv as b on a.prod_id = b.prod_id  group by a.order_id,a.user_id;
+
+SELECT a.user_id, a.order_id, GROUP_CONCAT(CONCAT('{','id: ',a.prod_id,',name: ',b.prod_name,',quantity: ',a.count,'}')) as products  FROM tbl_orders as a inner join tbl_inv as b on a.prod_id = b.prod_id  group by a.order_id,a.user_id;
+
+SELECT a.user_id, a.order_id, CONCAT('[',GROUP_CONCAT(CONCAT('{','id: ',a.prod_id,',name: ',b.prod_name,',quantity: ',a.count,'}')),']') as products  FROM tbl_orders AS a INNER JOIN tbl_inv AS b ON a.prod_id = b.prod_id WHERE a.user_id = 2 GROUP BY a.order_id,a.user_id;
+
+CONCAT('{','id: ',a.prod_id,'name: ',b.prod_name,'quantity: ',a.count,'}')
+
+
+
+steps for order:
+start a transaction.
+when order comes first update in the inventory table returning the products that've been updated. Make a json out of it to display. If there are any products(else, display a message) that could be sold, create a new row in the orders table returning the order number and then add rows into the order details table. 
+Close the transaction and display the order details to the end user. 
+
+Display the all order details/ or by a user.
+Take the orders from orders table and create a products column and get details comma separated and split them to get a dictionary out of them.
+This can be done by using exec in python
+
+cross check all functions once
+
+
+
+
+
+
+
+CREATE TABLE userdata (
+  userid INT,
+  userdataid INT,
+  info char(200),
+  primary key (userid, userdataid)
+);
+
+deal with key not found error done
+write an orders and topups function and functions to get them user id, product id
+orders need a new way of display to end user done
+update last topup and last order in tbl_inv done
+storecount after order going negative fixed, should not accept order if going negative, get the primary key of the prods affected in inv and add for only those products
+make it transactional
+time only giving 000 12 am because only date is stored in db (date objects)
+what if there is no product in the list (should be handled at ui)?? when ordering
+what if there is no product in the list (should be handled at ui)?? when updating and deleting
+what if same product is ordered twice in the same order
+what if same product is ordered twice in the same order
