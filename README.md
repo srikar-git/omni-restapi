@@ -2,11 +2,11 @@
 Task of creating a rest api for basic inventory/ordering products
 
 
-#Objective: 
+# Objective: 
 Create backend logic for a basic inventory and orders model. We keep track of the count of products present in the inventory
 
 
-#Running instructions:
+# Running instructions:
 
 1. mysql is needed and listed the needed python packages below.
 2. You can use create.sql script to create the tables. This will create a database named omni1 and create tables in it. Make sure you set this in db_confi.py. OR
@@ -48,19 +48,25 @@ omni_bkp.sql is a dump of a db (with name omni) with some data already in. You c
 
 
 
-#Versions:
+# Versions:
 python 2.7.12  (should be working with python 3 also )
+
 mysql  Ver 14.14 Distrib 5.7.24, for Linux (x86_64) using  EditLine wrapper
-python packages:
+
+## Python packages:
 flask, flask-mysql
+
 pymysql for getting results as dictionaries
 
+### Versions
 Flask==1.0.2
+
 Flask-MySQL==1.4.0
+
 PyMySQL==0.9.3
 
 
-#Assumptions:
+# Assumptions:
 
 One order or topup will have a product only once in the input request json (Error is thrown otherwise). UI can generally ensure that.
 If by an order the count of a product is going negative that product won't be sold in that order but the rest will be sold. If none can be sold, the order is not accepted.
@@ -72,7 +78,7 @@ Assumed all products are sold at their original price. But maintained sold_price
 latest_topup is the Utility function to get the latest topup id. Unlike latest_order, this is USED. We assume there'll be only one user topping up the inventory.
 
 
-#Tables and columns:
+# Tables and columns:
  
 tables: tbl_users, tbl_inv, tbl_ord, tbl_topups
 
